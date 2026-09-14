@@ -1,35 +1,22 @@
-FROM oven/bun:1 AS base
+FROM node:20-slim AS base
 WORKDIR /app
+RUN npm install -g pnpm
 
 # Copy workspace root configs
-COPY pnpm-workspace.yaml package.json ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 
-# Copy ALL package.json files so bun can resolve the workspace
+# Copy ALL package.json files so pnpm can resolve the workspace
 COPY packages/core/package.json ./packages/core/
 COPY packages/api/package.json ./packages/api/
 COPY packages/web/package.json ./packages/web/
 
-# Install dependencies (ignore frozen lockfile — bun doesn't speak pnpm natively)
-RUN bun install
+# Install dependencies
+RUN pnpm install --frozen-lockfile || pnpm install
 
-# Copy source for core and api (web not needed for API build)
+# Copy source
 COPY packages/core/ ./packages/core/
 COPY packages/api/ ./packages/api/
 
-# Build
-RUN cd packages/api && bun build ./src/index.ts --outdir ./dist --target bun
-
-# Production stage
-FROM oven/bun:1-slim AS production
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-COPY --from=base /app/packages/api/dist ./dist
-COPY --from=base /app/packages/api/package.json ./
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/packages/core ./packages/core
-
 EXPOSE 3000
 
-CMD ["bun", "run", "dist/index.js"]
+CMD ["npx", "tsx", "packages/api/src/index.ts"]
