@@ -3,6 +3,8 @@ import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
 import { tracking } from './routes/tracking.js';
 import { webhooks } from './routes/webhooks.js';
+import { admin } from './routes/admin.js';
+import { adminAuth } from './middleware/auth.js';
 
 const app = new Hono();
 
@@ -28,13 +30,17 @@ app.route('/', tracking);
 // Mount webhook routes (raw body read happens inside handler)
 app.route('/', webhooks);
 
-// List partners
+// List partners (public/legacy)
 app.get('/api/partners', async (c) => {
   return c.json({
     data: [],
     message: 'Partners endpoint — database integration pending',
   });
 });
+
+// Mount admin routes with auth middleware
+app.use('/api/admin/*', adminAuth);
+app.route('/api/admin', admin);
 
 const port = Number(process.env.PORT) || 3000;
 
