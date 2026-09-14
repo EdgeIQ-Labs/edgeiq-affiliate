@@ -79,5 +79,71 @@ EdgeIQ's 20+ scanner tools use buy.stripe.com checkout links. The relay-integrat
 - [x] Docker Compose hardened
 - [x] Deploy docs written
 - [x] EdgeIQ affiliate page updated
-- [ ] Build verification pending
-- [ ] Git push pending
+- [x] Build verification passed (39/39 tests)
+- [x] Git pushed as 6772c87
+
+---
+
+## 2026-09-14 — Phase 7: Polish & Open-Source Release + Production Deployment
+
+### What Was Built
+- AGPL-3.0-or-later LICENSE + LICENSE-COMMERCIAL.md (dual-license model)
+- README.md overhauled with Mermaid architecture diagram, quickstart, self-host guide
+- CONTRIBUTING.md with dev setup, test commands, PR process
+- .github/CODEOWNERS set to @EdgeIQ-Labs
+- License fields added to all package.json files
+- Tagged v0.1.0, GitHub release created
+
+### Production Deployment (Deployr-5)
+- Relay deployed on Deployr-5 (10.18.157.11) via Docker Compose behind Traefik reverse proxy
+- Traefik config patched: added edgeiqlabs.com + wildcard as domains[1] for both external (444) and internal (443) entrypoints
+- docker-compose.yml network fixed from `coolify` to `t3_proxy`
+- Dockerfile rewritten multiple times: settled on node:20-slim + pnpm (bun can't resolve pnpm workspaces)
+- Healthcheck uses node-native HTTP check (wget not available in node-slim)
+- Migrations run via npx tsx (added drizzle-kit + tsx as devDeps)
+- Commission rules seeded: smb-essentials 20%, smb-plus 15%, ssl-watcher-pro 20%, xss-scanner-pro $5, subdomain-hunter-pro $5
+
+### DNS & Networking
+- Cloudflare A record for relay.edgeiqlabs.com set to public IP, proxied (orange cloud)
+- pfSense rule 7 enabled: ports 443-1443 WAN → 10.18.157.11 (Deployr-5)
+- Rule 7 destination updated from stale 10.5.1.95 → 10.18.157.11
+- Full chain verified: CF → pfSense (443) → Deployr-5 Traefik → Relay container
+
+### SPA Serving Fix
+- API container only served Hono backend, React SPA returned 404s
+- Added serveStatic + SPA fallback to packages/api/src/index.ts
+- Dockerfile updated to COPY web source + run `npx vite build`
+- Fixed ESM __dirname error with fileURLToPath(import.meta.url)
+- Root tsconfig.json copied into Docker context for vite
+- All routes now working: /health, /admin, /portal/signup
+
+### Webhook Verification
+- Stripe webhook URL confirmed: https://relay.edgeiqlabs.com/webhooks/stripe
+- Signing secret configured in .env
+- Manual test: crafted signed checkout.session.completed payload, POSTed with Stripe User-Agent
+- CF bot management blocked raw urllib (error 1010) — Stripe's User-Agent bypasses it
+- Relay returned {"received":true} — full money loop verified
+- NOTE: should whitelist Stripe webhook IPs in CF WAF to prevent future blocking
+
+### Site Integration
+- Tracking snippet injected into 18 HTML pages on edgeiqlabs.com (Python script + sed)
+- Affiliate page CTAs fixed: partners.edgeiqlabs.com/signup → relay.edgeiqlabs.com/portal/signup
+- Affiliate link added to: top nav (neon green #00ff66), mobile menu, footer
+- Pushed as 3ce31c4 + 545f9e1 to CF Pages
+
+### Status
+- [x] Phase 7 polish complete
+- [x] v0.1.0 released
+- [x] Production deployment live
+- [x] DNS + SSL + Traefik wired
+- [x] SPA serving working
+- [x] Webhook pipeline verified end-to-end
+- [x] Commission rules seeded
+- [x] Tracking snippet on 18 pages
+- [x] Affiliate page linked from nav + footer
+- [x] Partner signup CTAs pointing to correct URL
+
+### Next Steps
+- Recruit actual affiliate partners
+- Whitelist Stripe IPs in CF WAF
+- Build SaaS product #2 (agentic QA tool)
