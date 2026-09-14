@@ -34,8 +34,6 @@ services:
       context: .
       dockerfile: packages/api/Dockerfile
     restart: unless-stopped
-    ports:
-      - "${PORT:-3000}:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,6 +45,16 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-relay}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-affiliate}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET is required}
+    networks:
+      - default
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.relay.rule=Host(`relay.edgeiqlabs.com`)"
+      - "traefik.http.routers.relay.entrypoints=https"
+      - "traefik.http.routers.relay.tls=true"
+      - "traefik.http.routers.relay.tls.certresolver=letsencrypt"
+      - "traefik.http.services.relay.loadbalancer.server.port=3000"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
       interval: 15s
@@ -57,3 +65,7 @@ services:
 volumes:
   postgres_data:
     driver: local
+
+networks:
+  coolify:
+    external: true
