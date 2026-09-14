@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: packages/api/Dockerfile
-    command: ["bun", "run", "packages/core/src/migrate.ts"]
+    command: ["npx", "tsx", "packages/core/src/migrate.ts"]
     restart: "no"
     depends_on:
       postgres:
