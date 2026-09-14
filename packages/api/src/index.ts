@@ -5,6 +5,8 @@ import { tracking } from './routes/tracking.js';
 import { webhooks } from './routes/webhooks.js';
 import { admin } from './routes/admin.js';
 import { adminAuth } from './middleware/auth.js';
+import { partnerPortal } from './routes/partner-portal.js';
+import { partnerAuth } from './middleware/partner-auth.js';
 
 const app = new Hono();
 
@@ -41,6 +43,15 @@ app.get('/api/partners', async (c) => {
 // Mount admin routes with auth middleware
 app.use('/api/admin/*', adminAuth);
 app.route('/api/admin', admin);
+
+// Mount partner portal routes with auth middleware (except signup)
+app.use('/api/partner/*', async (c, next) => {
+  if (c.req.path === '/api/partner/signup' && c.req.method === 'POST') {
+    return next();
+  }
+  return partnerAuth(c as any, next);
+});
+app.route('/api/partner', partnerPortal);
 
 const port = Number(process.env.PORT) || 3000;
 

@@ -1,11 +1,17 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getToken, setToken } from './lib/api.js';
+import { getPartnerToken } from './lib/partner-api.js';
 import Dashboard from './pages/Dashboard.js';
 import Partners from './pages/Partners.js';
 import Conversions from './pages/Conversions.js';
 import Rules from './pages/Rules.js';
 import Payouts from './pages/Payouts.js';
+import PartnerSignup from './pages/partner/Signup.js';
+import PartnerDashboard from './pages/partner/Dashboard.js';
+import PartnerClicks from './pages/partner/Clicks.js';
+import PartnerConversions from './pages/partner/Conversions.js';
+import PartnerLink from './pages/partner/Link.js';
 
 function AuthModal({ onSubmit }: { onSubmit: () => void }) {
   const [token, setTokenInput] = useState('');
@@ -47,6 +53,55 @@ const navItems = [
   { to: '/payouts', label: 'Payouts' },
 ];
 
+const partnerNavItems = [
+  { to: '/portal/dashboard', label: 'Dashboard' },
+  { to: '/portal/clicks', label: 'Clicks' },
+  { to: '/portal/conversions', label: 'Conversions' },
+  { to: '/portal/link', label: 'Referral Link' },
+];
+
+function PartnerLayout() {
+  return (
+    <div className="flex min-h-screen bg-bg text-text">
+      <aside className="w-56 border-r border-border bg-surface flex flex-col">
+        <div className="px-5 py-6 border-b border-border">
+          <h1 className="text-lg font-bold tracking-tight text-accent">Relay Partner</h1>
+          <p className="text-xs text-text/50 mt-1">Affiliate Portal</p>
+        </div>
+        <nav className="flex-1 p-3 space-y-1">
+          {partnerNavItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `block rounded px-3 py-2 text-sm font-medium transition ${
+                  isActive ? 'bg-accent/10 text-accent' : 'text-text/70 hover:bg-surface hover:text-text'
+                }`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="p-3 border-t border-border">
+          <a href="/dashboard" className="block rounded px-3 py-2 text-sm text-text/50 hover:text-text transition">
+            ← Admin Panel
+          </a>
+        </div>
+      </aside>
+      <main className="flex-1 p-8 overflow-auto">
+        <Routes>
+          <Route path="dashboard" element={<PartnerDashboard />} />
+          <Route path="clicks" element={<PartnerClicks />} />
+          <Route path="conversions" element={<PartnerConversions />} />
+          <Route path="link" element={<PartnerLink />} />
+          <Route path="*" element={<Navigate to="dashboard" replace />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
 export default function App() {
   const [authed, setAuthed] = useState(!!getToken());
 
@@ -56,45 +111,61 @@ export default function App() {
     return () => window.removeEventListener('relay:unauthorized', handler);
   }, []);
 
-  if (!authed) {
-    return <AuthModal onSubmit={() => setAuthed(true)} />;
-  }
-
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen bg-bg text-text">
-        <aside className="w-56 border-r border-border bg-surface flex flex-col">
-          <div className="px-5 py-6 border-b border-border">
-            <h1 className="text-lg font-bold tracking-tight text-accent">Relay Admin</h1>
-            <p className="text-xs text-text/50 mt-1">EdgeIQ Labs</p>
-          </div>
-          <nav className="flex-1 p-3 space-y-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `block rounded px-3 py-2 text-sm font-medium transition ${
-                    isActive ? 'bg-accent/10 text-accent' : 'text-text/70 hover:bg-surface hover:text-text'
-                  }`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        </aside>
-        <main className="flex-1 p-8 overflow-auto">
-          <Routes>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/partners" element={<Partners />} />
-            <Route path="/conversions" element={<Conversions />} />
-            <Route path="/rules" element={<Rules />} />
-            <Route path="/payouts" element={<Payouts />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </main>
-      </div>
+      <Routes>
+        {/* Partner portal routes — no admin auth required */}
+        <Route path="/portal/signup" element={<PartnerSignup />} />
+        <Route path="/portal/*" element={
+          getPartnerToken() ? <PartnerLayout /> : <Navigate to="/portal/signup" replace />
+        } />
+
+        {/* Admin routes */}
+        <Route path="/*" element={
+          authed ? (
+            <div className="flex min-h-screen bg-bg text-text">
+              <aside className="w-56 border-r border-border bg-surface flex flex-col">
+                <div className="px-5 py-6 border-b border-border">
+                  <h1 className="text-lg font-bold tracking-tight text-accent">Relay Admin</h1>
+                  <p className="text-xs text-text/50 mt-1">EdgeIQ Labs</p>
+                </div>
+                <nav className="flex-1 p-3 space-y-1">
+                  {navItems.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className={({ isActive }) =>
+                        `block rounded px-3 py-2 text-sm font-medium transition ${
+                          isActive ? 'bg-accent/10 text-accent' : 'text-text/70 hover:bg-surface hover:text-text'
+                        }`
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </nav>
+                <div className="p-3 border-t border-border">
+                  <a href="/portal/dashboard" className="block rounded px-3 py-2 text-sm text-text/50 hover:text-text transition">
+                    → Partner Portal
+                  </a>
+                </div>
+              </aside>
+              <main className="flex-1 p-8 overflow-auto">
+                <Routes>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/partners" element={<Partners />} />
+                  <Route path="/conversions" element={<Conversions />} />
+                  <Route path="/rules" element={<Rules />} />
+                  <Route path="/payouts" element={<Payouts />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
+              </main>
+            </div>
+          ) : (
+            <AuthModal onSubmit={() => setAuthed(true)} />
+          )
+        } />
+      </Routes>
     </BrowserRouter>
   );
 }
