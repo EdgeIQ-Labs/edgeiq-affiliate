@@ -14,6 +14,7 @@ COPY packages/web/package.json ./packages/web/
 RUN pnpm install --frozen-lockfile || pnpm install
 
 # Copy source for all packages
+COPY tsconfig.json ./
 COPY packages/core/ ./packages/core/
 COPY packages/api/ ./packages/api/
 COPY packages/web/ ./packages/web/
