@@ -18,5 +18,8 @@
   },
   "license": "AGPL-3.0-or-later",
   "author": "EdgeIQ Labs",
-  "homepage": "https://edgeiqlabs.com/affiliate"
+  "homepage": "https://edgeiqlabs.com/affiliate",
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10"
+  }
 }
