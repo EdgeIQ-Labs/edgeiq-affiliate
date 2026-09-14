@@ -7,6 +7,7 @@
     "dev:api": "pnpm --filter @relay/api dev",
     "dev:web": "pnpm --filter @relay/web dev",
     "build": "pnpm -r build",
+    "test": "pnpm -r test",
     "db:generate": "pnpm --filter @relay/core db:generate",
     "db:migrate": "pnpm --filter @relay/core db:migrate"
   },

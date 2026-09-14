@@ -10,7 +10,8 @@
     "./schema": "./src/schema.ts",
     "./db": "./src/db.ts",
     "./visitor": "./src/visitor.ts",
-    "./checkout": "./src/checkout.ts"
+    "./checkout": "./src/checkout.ts",
+    "./stripe": "./src/stripe.ts"
   },
   "scripts": {
     "build": "tsc",

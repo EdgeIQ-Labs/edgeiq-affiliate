@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
 import { tracking } from './routes/tracking.js';
+import { webhooks } from './routes/webhooks.js';
 
 const app = new Hono();
 
@@ -24,29 +25,8 @@ app.get('/health', (c) => {
 // Mount tracking routes
 app.route('/', tracking);
 
-// Stripe webhook receiver
-app.post('/webhooks/stripe', async (c) => {
-  const signature = c.req.header('stripe-signature');
-  const body = await c.req.text();
-
-  if (!signature) {
-    return c.json({ error: 'Missing stripe-signature header' }, 400);
-  }
-
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    console.warn('[Stripe] STRIPE_WEBHOOK_SECRET not configured');
-  }
-
-  try {
-    const event = JSON.parse(body);
-    console.log(`[Stripe] Received event: ${event.type ?? 'unknown'}`);
-    return c.json({ received: true });
-  } catch (err) {
-    console.error('[Stripe] Webhook processing failed:', err);
-    return c.json({ error: 'Webhook processing failed' }, 500);
-  }
-});
+// Mount webhook routes (raw body read happens inside handler)
+app.route('/', webhooks);
 
 // List partners
 app.get('/api/partners', async (c) => {
