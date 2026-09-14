@@ -20,6 +20,7 @@
   "author": "EdgeIQ Labs",
   "homepage": "https://edgeiqlabs.com/affiliate",
   "devDependencies": {
-    "drizzle-kit": "^0.31.10"
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.23.13"
   }
 }
