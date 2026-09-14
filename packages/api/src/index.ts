@@ -1,11 +1,19 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
+import { tracking } from './routes/tracking.js';
 
 const app = new Hono();
 
-app.use('*', logger());
+// Request logging middleware with duration
+app.use('*', async (c, next) => {
+  const start = Date.now();
+  await next();
+  const duration = Date.now() - start;
+  console.log(`${c.req.method} ${c.req.path} ${c.res.status} ${duration}ms`);
+});
+
+// CORS for API routes
 app.use('/api/*', cors());
 
 // Health check
@@ -13,18 +21,8 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Click tracking redirect
-app.get('/r/:code', async (c) => {
-  const code = c.req.param('code');
-  const visitorId = c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown';
-
-  // TODO: Look up partner by referral_code, record click event in DB
-  console.log(`[Tracking] Click for code=${code} from visitor=${visitorId}`);
-
-  // Redirect to signup/home page
-  const baseUrl = process.env.PUBLIC_BASE_URL ?? 'https://edgeiq.io';
-  return c.redirect(`${baseUrl}?ref=${encodeURIComponent(code)}`, 302);
-});
+// Mount tracking routes
+app.route('/', tracking);
 
 // Stripe webhook receiver
 app.post('/webhooks/stripe', async (c) => {
@@ -35,14 +33,12 @@ app.post('/webhooks/stripe', async (c) => {
     return c.json({ error: 'Missing stripe-signature header' }, 400);
   }
 
-  // TODO: Verify Stripe webhook signature using STRIPE_WEBHOOK_SECRET
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
     console.warn('[Stripe] STRIPE_WEBHOOK_SECRET not configured');
   }
 
   try {
-    // Placeholder: parse and handle the event
     const event = JSON.parse(body);
     console.log(`[Stripe] Received event: ${event.type ?? 'unknown'}`);
     return c.json({ received: true });
@@ -54,7 +50,6 @@ app.post('/webhooks/stripe', async (c) => {
 
 // List partners
 app.get('/api/partners', async (c) => {
-  // TODO: Query partners from database via Drizzle
   return c.json({
     data: [],
     message: 'Partners endpoint — database integration pending',
