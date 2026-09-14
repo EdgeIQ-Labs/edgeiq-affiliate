@@ -13,9 +13,13 @@ COPY packages/web/package.json ./packages/web/
 # Install dependencies
 RUN pnpm install --frozen-lockfile || pnpm install
 
-# Copy source
+# Copy source for all packages
 COPY packages/core/ ./packages/core/
 COPY packages/api/ ./packages/api/
+COPY packages/web/ ./packages/web/
+
+# Build the React SPA
+RUN cd packages/web && pnpm build
 
 EXPOSE 3000
 

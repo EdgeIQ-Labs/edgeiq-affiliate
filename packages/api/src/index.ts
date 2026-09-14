@@ -1,6 +1,9 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
+import { serveStatic } from '@hono/node-server/serve-static';
+import * as fs from 'fs';
+import * as path from 'path';
 import { tracking } from './routes/tracking.js';
 import { webhooks } from './routes/webhooks.js';
 import { admin } from './routes/admin.js';
@@ -52,6 +55,21 @@ app.use('/api/partner/*', async (c, next) => {
   return partnerAuth(c as any, next);
 });
 app.route('/api/partner', partnerPortal);
+
+// Serve React SPA static files
+const webDist = path.resolve(__dirname, '../../web/dist');
+if (fs.existsSync(webDist)) {
+  app.use('/*', serveStatic({ root: webDist }));
+
+  // SPA fallback — serve index.html for any non-API, non-file route
+  app.get('*', (c) => {
+    const indexPath = path.join(webDist, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      return c.html(fs.readFileSync(indexPath, 'utf-8'));
+    }
+    return c.notFound();
+  });
+}
 
 const port = Number(process.env.PORT) || 3000;
 
