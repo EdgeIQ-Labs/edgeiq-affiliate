@@ -44,3 +44,40 @@
 
 ### Blockers
 None yet — waiting on spec to land before making architecture decisions.
+
+---
+
+## 2026-09-15 — Phase 6: Dogfood Integration
+
+### Context
+- Phases 1-5 complete (39 tests passing, commit d98f6a0)
+- Phase 6 wires Relay into EdgeIQ's actual Stripe checkout flow so we eat our own dog food
+
+### What Was Built
+- **drizzle.config.ts** — root-level drizzle-kit config for `generate` and `migrate` commands
+- **packages/core/src/migrate.ts** — standalone migration runner using drizzle-orm's `migrate()`, reads DATABASE_URL from env
+- **scripts/seed-edgeiq.ts** — idempotent seed script inserting commission_rules for EdgeIQ plans (smb-essentials 20%, smb-plus 15%, ssl-watcher-pro 20%, scanner tools $5 fixed)
+- **packages/web/src/lib/relay-integration.ts** — drop-in IIFE bundle for static sites; exports `init()`, `buildRelayLink()`, `getReferralCode()`, `rewriteCheckoutLinks()`; auto-rewrites buy.stripe.com links via MutationObserver
+- **docker-compose.yml** — hardened with migrate service (runs before API), health checks on postgres + api, fail-fast env var validation (`:?` syntax), restart policies, named volume
+- **docs/DEPLOY.md** — production deployment guide
+- **edgeiq-labs/affiliate/index.html** — replaced coming-soon stub with live affiliate program page, commission structure, integration docs, relay-integration.js script tag
+
+### Decisions Made
+- Used DELETE+INSERT in a transaction for seed idempotency (commission_rules has no unique constraint on plan_id)
+- Migrate runs as a separate Docker Compose service with `restart: "no"` and `condition: service_completed_successfully` dependency
+- relay-integration.ts uses MutationObserver to catch dynamically injected checkout links
+- Affiliate page loads relay-integration.js from `https://relay.edgeiqlabs.com` (production URL)
+
+### Dogfood Approach
+EdgeIQ's 20+ scanner tools use buy.stripe.com checkout links. The relay-integration.js snippet appends `client_reference_id` from the `_relay_vid` cookie to all Stripe links automatically. When a referred visitor subscribes, Stripe fires `checkout.session.completed` with the reference ID, and Relay matches it to the partner.
+
+### Status
+- [x] Migration runner created
+- [x] Drizzle config added
+- [x] Seed script for EdgeIQ plans
+- [x] Static site integration helper
+- [x] Docker Compose hardened
+- [x] Deploy docs written
+- [x] EdgeIQ affiliate page updated
+- [ ] Build verification pending
+- [ ] Git push pending

@@ -9,7 +9,8 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "db:generate": "pnpm --filter @relay/core db:generate",
-    "db:migrate": "pnpm --filter @relay/core db:migrate"
+    "db:migrate": "pnpm --filter @relay/core db:migrate",
+    "seed:edgeiq": "bun run scripts/seed-edgeiq.ts"
   },
   "engines": {
     "node": ">=20.0.0",

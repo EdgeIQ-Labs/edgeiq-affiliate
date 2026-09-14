@@ -5,16 +5,31 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: relay
-      POSTGRES_PASSWORD: relay_dev_password
-      POSTGRES_DB: affiliate
+      POSTGRES_USER: ${POSTGRES_USER:-relay}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-affiliate}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U relay -d affiliate"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-relay} -d ${POSTGRES_DB:-affiliate}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
+
+  migrate:
+    build:
+      context: ./packages/api
+      dockerfile: Dockerfile
+    command: ["bun", "run", "packages/core/src/migrate.ts"]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-relay}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-affiliate}
 
   api:
     build:
@@ -26,10 +41,21 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://relay:relay_dev_password@postgres:5432/affiliate
+      DATABASE_URL: postgresql://${POSTGRES_USER:-relay}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-affiliate}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET is required}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   postgres_data:
+    driver: local
