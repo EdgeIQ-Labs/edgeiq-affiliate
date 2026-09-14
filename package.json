@@ -1,0 +1,17 @@
+{
+  "name": "relay",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Relay - Self-hosted affiliate marketing tool by EdgeIQ Labs",
+  "scripts": {
+    "dev:api": "pnpm --filter @relay/api dev",
+    "dev:web": "pnpm --filter @relay/web dev",
+    "build": "pnpm -r build",
+    "db:generate": "pnpm --filter @relay/core db:generate",
+    "db:migrate": "pnpm --filter @relay/core db:migrate"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
