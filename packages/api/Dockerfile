@@ -19,7 +19,7 @@ COPY packages/api/ ./packages/api/
 COPY packages/web/ ./packages/web/
 
 # Build the React SPA
-RUN cd packages/web && pnpm build
+RUN cd packages/web && npx vite build
 
 EXPOSE 3000
 
