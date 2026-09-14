@@ -2,16 +2,17 @@ FROM oven/bun:1 AS base
 WORKDIR /app
 
 # Copy workspace root configs
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
+COPY pnpm-workspace.yaml package.json ./
 
-# Copy all package.json files for workspace resolution
+# Copy ALL package.json files so bun can resolve the workspace
 COPY packages/core/package.json ./packages/core/
 COPY packages/api/package.json ./packages/api/
+COPY packages/web/package.json ./packages/web/
 
-# Install dependencies
-RUN bun install --frozen-lockfile || bun install
+# Install dependencies (ignore frozen lockfile — bun doesn't speak pnpm natively)
+RUN bun install
 
-# Copy source
+# Copy source for core and api (web not needed for API build)
 COPY packages/core/ ./packages/core/
 COPY packages/api/ ./packages/api/
 
