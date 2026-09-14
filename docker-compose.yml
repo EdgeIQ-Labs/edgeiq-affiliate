@@ -56,7 +56,7 @@ services:
       - "traefik.http.routers.relay.tls.certresolver=letsencrypt"
       - "traefik.http.services.relay.loadbalancer.server.port=3000"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/health',r=>{process.exit(r.statusCode===200?0:1)})\""]
       interval: 15s
       timeout: 5s
       retries: 3
